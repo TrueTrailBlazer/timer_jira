@@ -120,23 +120,30 @@
 
 ## 🖼️ Screenshots
 
-## 🖼️ Screenshots
+Aqui estão algumas telas da extensão em ação:
 
-**1. Painel do timer na página do Jira:**
 ![Painel do Timer no Jira](https://github.com/user-attachments/assets/241cbf39-8547-40f7-aef3-4244b601eab0)
+*Painel do timer na página do Jira.*
 
-**2. Popup mostrando a lista de timers ativos:**
+---
+
 ![Popup com Timers Ativos](https://github.com/user-attachments/assets/29e193b7-818d-482c-9742-8b64b7d9182b)
+*Popup mostrando a lista de timers ativos.*
 
-**3. Popup na visualização de gerenciamento de templates:**
+---
+
 ![Gerenciamento de Templates no Popup](https://github.com/user-attachments/assets/b8462a9c-6078-45e6-a701-2a9ac3ef12ca)
+*Popup na visualização de gerenciamento de templates.*
 
-**4. Exemplo de notificação do navegador:**
+---
+
 ![Notificação do Navegador](https://github.com/user-attachments/assets/0c017bef-221b-479a-8f5d-1e75e0a4c83e)
+*Exemplo de notificação do navegador.*
 
-**5. Dropdown de templates na página do Jira:**
+---
+
 ![Dropdown de Templates no Jira](https://github.com/user-attachments/assets/8a0ca435-6201-47d5-81d6-c2b03795c4fe)
-
+*Dropdown de templates na página do Jira.*
 ## 📜 Licença
 
 Este projeto é distribuído sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes (se você adicionar um).
