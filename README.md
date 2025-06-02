@@ -120,20 +120,22 @@
 
 ## 🖼️ Screenshots
 
-* *Painel do timer na página do Jira.*
-  ![Imagem do WhatsApp de 2025-06-02 à(s) 14 39 40_b6cf8c76](https://github.com/user-attachments/assets/241cbf39-8547-40f7-aef3-4244b601eab0)
-  
-* *Popup mostrando a lista de timers ativos.*
-  ![Imagem do WhatsApp de 2025-06-02 à(s) 14 39 59_a7c187f8](https://github.com/user-attachments/assets/29e193b7-818d-482c-9742-8b64b7d9182b)
+## 🖼️ Screenshots
 
-* *Popup na visualização de gerenciamento de templates.*
-* ![Imagem do WhatsApp de 2025-06-02 à(s) 14 40 15_4f401a03](https://github.com/user-attachments/assets/b8462a9c-6078-45e6-a701-2a9ac3ef12ca)
+**1. Painel do timer na página do Jira:**
+![Painel do Timer no Jira](https://github.com/user-attachments/assets/241cbf39-8547-40f7-aef3-4244b601eab0)
 
-* *Exemplo de notificação do navegador.*
-* ![Imagem do WhatsApp de 2025-06-02 à(s) 14 41 38_b2fce3d1](https://github.com/user-attachments/assets/0c017bef-221b-479a-8f5d-1e75e0a4c83e)
+**2. Popup mostrando a lista de timers ativos:**
+![Popup com Timers Ativos](https://github.com/user-attachments/assets/29e193b7-818d-482c-9742-8b64b7d9182b)
 
-* *Dropdown de templates na página do Jira.)*
-  ![Imagem do WhatsApp de 2025-06-02 à(s) 14 42 36_bbde7055](https://github.com/user-attachments/assets/8a0ca435-6201-47d5-81d6-c2b03795c4fe)
+**3. Popup na visualização de gerenciamento de templates:**
+![Gerenciamento de Templates no Popup](https://github.com/user-attachments/assets/b8462a9c-6078-45e6-a701-2a9ac3ef12ca)
+
+**4. Exemplo de notificação do navegador:**
+![Notificação do Navegador](https://github.com/user-attachments/assets/0c017bef-221b-479a-8f5d-1e75e0a4c83e)
+
+**5. Dropdown de templates na página do Jira:**
+![Dropdown de Templates no Jira](https://github.com/user-attachments/assets/8a0ca435-6201-47d5-81d6-c2b03795c4fe)
 
 ## 📜 Licença
 
