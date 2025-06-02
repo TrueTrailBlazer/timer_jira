@@ -1,0 +1,349 @@
+/* popup/popup.css */
+:root {
+    --popup-bg: #f4f5f7;
+    --popup-text: #172b4d;
+    --popup-title-text: #091E42;
+    --popup-item-bg: #ffffff;
+    --popup-item-border: #dfe1e6;
+    --popup-item-hover-bg: #ebecf0;
+    --popup-item-expired-bg: #ffebe6;
+    --popup-item-expired-border: #de350b;
+    --popup-item-expired-text: #bf2600;
+    --popup-item-exceeded-text: #FF8B00; /* Y400 */
+    --popup-button-bg: #0052CC; /* B400 - para botões primários como Refresh */
+    --popup-button-text: #FFFFFF;
+    --popup-button-hover-bg: #0065FF; /* B300 */
+    --action-button-bg: #007bff; /* Botões de ação genéricos (ex: Abrir, Parar) */
+    --action-button-hover-bg: #0056b3;
+    --action-button-delete-bg: #DE350B;
+    --action-button-delete-hover-bg: #BF2600;
+    --neutral-button-bg: #5E6C84; /* Para Gerenciar Templates, Voltar */
+    --neutral-button-hover-bg: #6C798F;
+    --save-button-bg: #0052CC; /* Cor do botão Salvar Template */
+    --save-button-hover-bg: #0065FF;
+    --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #c1c7d0;
+    --scrollbar-thumb-hover: #8993a4;
+    --no-items-text: #5e6c84;
+    --muted-text-color: #5E6C84; /* Cor para texto secundário como nome da cidade */
+    --input-bg: #FAFBFC;
+    --input-border: #DFE1E6;
+    --input-text: #091E42;
+    --input-focus-border: #4C9AFF;
+}
+
+body.dark-theme {
+    --popup-bg: #1D2125;
+    --popup-text: #D1D5DB;
+    --popup-title-text: #EAECEF;
+    --popup-item-bg: #282E39;
+    --popup-item-border: #404854;
+    --popup-item-hover-bg: #343A46;
+    --popup-item-expired-bg: #5C2D23;
+    --popup-item-expired-border: #FF5630;
+    --popup-item-expired-text: #FF8F73;
+    --popup-item-exceeded-text: #FFAB00;
+    --popup-button-bg: #0065FF;
+    --popup-button-hover-bg: #2684FF;
+    --action-button-bg: #2684FF;
+    --action-button-hover-bg: #0065FF;
+    --action-button-delete-bg: #FF5630;
+    --action-button-delete-hover-bg: #FF7452;
+    --neutral-button-bg: #404854;
+    --neutral-button-hover-bg: #525C6B;
+    --save-button-bg: #3C79F6;
+    --save-button-hover-bg: #5F8FF7;
+    --scrollbar-track: #282E39;
+    --scrollbar-thumb: #404854;
+    --scrollbar-thumb-hover: #525C6B;
+    --no-items-text: #97A0AF;
+    --muted-text-color: #97A0AF; /* Cor para texto secundário no tema escuro */
+    --input-bg: #22272B;
+    --input-border: #3E454D;
+    --input-text: #BFC4C9;
+    --input-focus-border: #4C9AFF;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    width: 390px; /* Largura do popup */
+    margin: 0;
+    padding: 0;
+    background-color: var(--popup-bg);
+    color: var(--popup-text);
+    overflow-x: hidden; /* Prevenir scroll horizontal */
+}
+
+.popup-container {
+    padding: 15px;
+    position: relative;
+}
+
+.theme-toggle-button-popup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: 1px solid var(--popup-item-border);
+    color: var(--popup-text);
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    opacity: 0.8;
+    z-index: 10; /* Garantir que fique por cima */
+}
+.theme-toggle-button-popup:hover {
+    opacity: 1;
+    background-color: var(--popup-item-hover-bg);
+}
+
+/* Estilo dos títulos H2 dentro das visualizações */
+#timers-view > h2, #templates-view > h2 {
+    font-size: 18px;
+    color: var(--popup-title-text);
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+
+/* Lista de Timers Ativos e Lista de Templates */
+#timers-list, #templates-list-popup {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 10px 0; 
+    max-height: 260px; 
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+#templates-list-popup {
+    max-height: 200px; 
+}
+
+/* Itens da Lista (Timers e Templates) */
+.timer-item, .template-item {
+    background-color: var(--popup-item-bg);
+    border: 1px solid var(--popup-item-border);
+    border-radius: 3px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+}
+.timer-item:hover, .template-item:hover {
+    background-color: var(--popup-item-hover-bg);
+}
+.timer-item.expired {
+    background-color: var(--popup-item-expired-bg);
+    border-left: 3px solid var(--popup-item-expired-border);
+}
+
+/* Informações dentro dos itens da lista */
+.timer-info {
+    display: flex;
+    flex-direction: column; /* Mantém a organização vertical */
+    flex-grow: 1;
+    margin-right: 10px;
+    overflow: hidden;
+}
+
+/* NOVO: Container para a primeira linha (Issue Key + City Name) */
+.timer-info-line1 {
+    display: flex; /* Permite que issue-key e city-name fiquem na mesma linha */
+    align-items: baseline; /* Alinha pela base do texto */
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.timer-info .issue-key {
+    font-weight: bold;
+    color: var(--popup-button-bg); 
+    font-size: 13px;
+    /* margin-bottom: 2px; REMOVIDO: agora controlado por .timer-info-line1 */
+    white-space: nowrap; /* Para garantir que não quebre linha internamente */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline; /* Para fluir com a cidade */
+}
+
+/* NOVO: Estilo para o nome da cidade */
+.timer-city-name {
+    font-size: 11px;
+    color: var(--muted-text-color);
+    font-weight: normal;
+    margin-left: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline; /* Para fluir com a issue key */
+    flex-shrink: 1; /* Permite encolher se a issue-key for muito longa */
+}
+
+.timer-info .issue-title {
+    font-size: 12px;
+    color: var(--popup-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+.timer-info span:not(.issue-key):not(.issue-title):not(.timer-city-name) { /* Tempo restante/excedido */
+    font-size: 13px;
+    color: var(--popup-text);
+}
+.timer-info .expired-text { color: var(--popup-item-expired-text); font-weight: bold; }
+.timer-info .exceeded-text { color: var(--popup-item-exceeded-text); font-size: 11px; display: block; margin-top: 1px; }
+
+.template-info .template-name-display { font-weight: 500; color: var(--popup-text); font-size: 13px; }
+.template-info .template-duration-display { font-size: 11px; color: var(--no-items-text); margin-left: 5px; }
+
+/* Ações nos itens da lista */
+.timer-actions, .template-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Estilo geral para botões de ação nos itens e botões de navegação */
+.action-button {
+    color: var(--popup-button-text);
+    border: none;
+    border-radius: 3px;
+    padding: 5px 8px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: background-color 0.2s ease;
+    background-color: var(--action-button-bg); /* Cor padrão para botões de ação */
+    margin-left: 5px; /* Espaçamento padrão */
+}
+.action-button:first-child {
+    margin-left: 0; /* Remover margem do primeiro botão em um grupo */
+}
+.action-button:hover {
+    background-color: var(--action-button-hover-bg);
+}
+
+/* Botões de "deletar" ou "parar" */
+.action-button.stop-timer,
+.action-button.clear-timer,
+.action-button.delete-template-button {
+    background-color: var(--action-button-delete-bg);
+}
+.action-button.stop-timer:hover,
+.action-button.clear-timer:hover,
+.action-button.delete-template-button:hover {
+    background-color: var(--action-button-delete-hover-bg);
+}
+
+/* Botão de "Salvar Template" */
+.action-button.save-button {
+    background-color: var(--save-button-bg);
+    width: 100%; /* Ocupar toda a largura no formulário */
+    margin-left: 0;
+    font-size: 13px; /* Texto um pouco maior */
+    padding: 7px 10px;
+}
+.action-button.save-button:hover {
+    background-color: var(--save-button-hover-bg);
+}
+
+/* Botões de largura total para navegação de visualização e Refresh */
+.action-button.full-width-button {
+    display: block;
+    width: 100%;
+    margin: 10px 0 0 0; /* Espaçamento superior, sem margem lateral */
+    font-size: 13px;
+    padding: 8px 12px;
+}
+.action-button.full-width-button.neutral-bg { /* Para "Gerenciar Templates" e "Voltar" */
+    background-color: var(--neutral-button-bg);
+}
+.action-button.full-width-button.neutral-bg:hover {
+    background-color: var(--neutral-button-hover-bg);
+}
+#refresh-button { /* Estilo específico para o botão Refresh */
+    display: block;
+    width: 100%;
+    margin: 10px 0 0 0;
+    padding: 8px 12px;
+    background-color: var(--popup-button-bg); /* Cor primária */
+    color: var(--popup-button-text);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+#refresh-button:hover {
+    background-color: var(--popup-button-hover-bg);
+}
+
+
+/* Mensagens de "Nenhum item" */
+#no-timers-message, #no-templates-message-tpl-popup {
+    text-align: center;
+    padding: 20px;
+    color: var(--no-items-text);
+    font-size: 14px;
+}
+
+/* Scrollbar */
+#timers-list::-webkit-scrollbar, #templates-list-popup::-webkit-scrollbar { width: 8px; }
+#timers-list::-webkit-scrollbar-track, #templates-list-popup::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 10px; }
+#timers-list::-webkit-scrollbar-thumb, #templates-list-popup::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+#timers-list::-webkit-scrollbar-thumb:hover, #templates-list-popup::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+/* Formulário de Template */
+.template-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background-color: var(--popup-item-bg);
+    border: 1px solid var(--popup-item-border);
+    border-radius: 3px;
+    margin-bottom: 10px;
+}
+.template-form input[type="text"].template-input-name,
+.template-form input[type="number"] {
+    padding: 6px 8px;
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    font-size: 13px;
+    box-sizing: border-box; /* Incluir padding e border no width/height */
+}
+.template-form input[type="text"].template-input-name {
+    width: 100%;
+}
+.template-form input[type="text"].template-input-name:focus,
+.template-form input[type="number"]:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 1px var(--input-focus-border);
+    outline: none;
+}
+.template-duration-inputs {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+.template-duration-inputs input[type="number"] {
+    width: 45px;
+    text-align: center;
+}
+.template-duration-inputs span { 
+    color: var(--popup-text);
+}
+
+/* Separador */
+hr.section-separator {
+    border: none;
+    border-top: 1px solid var(--popup-item-border);
+    margin: 15px 0;
+}

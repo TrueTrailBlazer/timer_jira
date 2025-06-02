@@ -1,0 +1,188 @@
+/* content_scripts/jira_content_timer.css */
+
+:root {
+    --timer-bg-color: #F4F5F7;
+    --timer-border-color: #DFE1E6;
+    --timer-text-color: #172B4D;
+    --timer-input-bg: #FFFFFF;
+    --timer-input-border: #DFE1E6;
+    --timer-input-focus-border: #4C9AFF;
+    --timer-input-focus-shadow: rgba(76, 154, 255, 0.3);
+    --timer-button-start-bg: #0052CC;
+    --timer-button-start-hover-bg: #0065FF;
+    --timer-button-start-active-bg: #0747A6;
+    --timer-button-stop-bg: #DE350B;
+    --timer-button-stop-hover-bg: #FF5630;
+    --timer-button-stop-active-bg: #BF2600;
+    --timer-button-text: #FFFFFF;
+    --timer-button-disabled-bg: #091e420f;
+    --timer-button-disabled-text: #091e426b;
+    --timer-expired-text-color: #DE350B;
+    --timer-exceeded-text-color: #FF8B00;
+    --timer-dropdown-text-color: #0052CC; /* Blue for dropdown text, like image */
+}
+
+.jira-ext-timer-module.dark-theme {
+    --timer-bg-color: #202124;
+    --timer-border-color: #303134;
+    --timer-text-color: #BDC1C6;
+    --timer-input-bg: #282A2D;
+    --timer-input-border: #3C4043;
+    --timer-button-start-bg: #3C79F6;
+    --timer-button-start-hover-bg: #5F8FF7;
+    --timer-button-start-active-bg: #1A52C4;
+    --timer-button-stop-bg: #E54949;
+    --timer-button-stop-hover-bg: #E86363;
+    --timer-button-stop-active-bg: #D13030;
+    --timer-button-disabled-bg: #303134;
+    --timer-button-disabled-text: #70757A;
+    --timer-expired-text-color: #E54949;
+    --timer-exceeded-text-color: #FFAB00;
+    --timer-dropdown-text-color: #629DFF; /* Lighter blue for dark theme */
+}
+
+.jira-ext-timer-module {
+    width: 100%;
+    max-width: 580px; /* AUMENTADO: De 480px para 580px para dar mais espaço */
+    min-height: auto;
+    padding: 8px 10px;
+    margin-bottom: 16px;
+    background-color: var(--timer-bg-color);
+    border: 1px solid var(--timer-border-color);
+    border-radius: 3px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    font-size: 13px;
+    color: var(--timer-text-color);
+    box-shadow: 0 1px 2px rgba(9,30,66,0.1);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.jira-ext-timer-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.jira-ext-timer-input-field {
+    width: 35px;
+    padding: 5px 7px;
+    border: 1px solid var(--timer-input-border);
+    border-radius: 3px;
+    background-color: var(--timer-input-bg);
+    color: var(--timer-text-color);
+    box-sizing: border-box;
+    font-size: 13px;
+    text-align: center;
+}
+.jira-ext-timer-input-field:focus {
+    border-color: var(--timer-input-focus-border);
+    box-shadow: 0 0 0 2px var(--timer-input-focus-shadow);
+    outline: none;
+}
+
+.jira-ext-timer-input-group span {
+    font-size: 12px;
+    color: var(--timer-text-color);
+    opacity: 0.8;
+}
+
+.jira-ext-timer-action-button {
+    padding: 5px 10px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    transition: background-color 0.1s ease-out, border-color 0.1s ease-out, color 0.1s ease-out;
+    line-height: normal;
+    color: var(--timer-button-text);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.jira-ext-timer-action-button.start { background-color: var(--timer-button-start-bg); border-color: var(--timer-button-start-bg); }
+.jira-ext-timer-action-button.start:hover { background-color: var(--timer-button-start-hover-bg); border-color: var(--timer-button-start-hover-bg); }
+.jira-ext-timer-action-button.start:active { background-color: var(--timer-button-start-active-bg); border-color: var(--timer-button-start-active-bg); }
+.jira-ext-timer-action-button.stop { background-color: var(--timer-button-stop-bg); border-color: var(--timer-button-stop-bg); }
+.jira-ext-timer-action-button.stop:hover { background-color: var(--timer-button-stop-hover-bg); border-color: var(--timer-button-stop-hover-bg); }
+.jira-ext-timer-action-button.stop:active { background-color: var(--timer-button-stop-active-bg); border-color: var(--timer-button-stop-active-bg); }
+.jira-ext-timer-action-button:disabled { background-color: var(--timer-button-disabled-bg) !important; color: var(--timer-button-disabled-text) !important; border-color: transparent !important; cursor: not-allowed !important; }
+
+.jira-ext-display-and-template-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-grow: 1;
+    overflow: hidden; /* Mantido para o wrapper, mas filhos terão min-width: 0 */
+    min-width: 0; /* ADICIONADO: Importante para flex children */
+}
+
+.jira-ext-timer-display-text {
+    font-weight: 500;
+    color: var(--timer-text-color);
+    font-size: 13px;
+    padding: 2px 0;
+    text-align: left;
+    min-height: 18px;
+    white-space: nowrap; /* Mantido para manter em uma linha */
+    overflow: hidden; /* Mantido para habilitar ellipsis */
+    text-overflow: ellipsis; /* Mantido para truncar texto longo */
+    flex-shrink: 1; /* MODIFICADO: Permitir que encolha se necessário, antes era 0 */
+    min-width: 0; /* ADICIONADO: Crucial para permitir encolhimento e ellipsis */
+}
+
+.timer-expired-notification {
+    color: var(--timer-expired-text-color);
+    font-weight: 600;
+}
+.timer-exceeded-info {
+    color: var(--timer-exceeded-text-color);
+    font-weight: 500;
+    font-size: 11px;
+    display: inline;
+    margin-left: 4px;
+}
+
+.jira-ext-template-dropdown-select {
+    padding: 3px 6px;
+    border: 1px solid var(--timer-input-border);
+    border-radius: 3px;
+    background-color: var(--timer-input-bg);
+    color: var(--timer-dropdown-text-color);
+    font-size: 12px;
+    max-width: 180px;
+    height: auto;
+    line-height: normal;
+    cursor: pointer;
+    flex-shrink: 0; /* MODIFICADO: Dropdown agora não encolhe, o texto do display encolherá primeiro */
+    text-overflow: ellipsis;
+}
+
+.jira-ext-template-dropdown-select:disabled {
+    background-color: var(--timer-button-disabled-bg);
+    color: var(--timer-button-disabled-text);
+    cursor: not-allowed;
+    border-color: var(--timer-button-disabled-bg);
+}
+
+.jira-ext-template-dropdown-select:focus {
+    border-color: var(--timer-input-focus-border);
+    box-shadow: 0 0 0 2px var(--timer-input-focus-shadow);
+    outline: none;
+}
+
+.jira-ext-template-dropdown-select option {
+    color: var(--timer-text-color);
+    background-color: var(--timer-input-bg);
+}
+
+.jira-ext-timer-module.dark-theme .jira-ext-template-dropdown-select option {
+    color: var(--timer-text-color);
+    background-color: var(--timer-input-bg);
+}

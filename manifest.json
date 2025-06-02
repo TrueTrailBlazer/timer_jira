@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Jira Ticket Timer & Resumo",
+  "version": "1.22",
+  "description": "Adiciona timers individuais a tickets do Jira e um resumo dos timers ativos, com gerenciamento de templates no popup.",
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.atlassian.net/browse/*",
+    "*://*.atlassian.net/issues/*"
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.atlassian.net/browse/*",
+        "*://*.atlassian.net/issues/*"
+      ],
+      "js": ["content_scripts/jira_content_timer.js"],
+      "css": ["content_scripts/jira_content_timer.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/icon128.png"
+      ],
+      "matches": [ "<all_urls>" ]
+    }
+  ]
+}

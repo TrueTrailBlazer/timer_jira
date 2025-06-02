@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resumo dos Timers Jira</title>
+    <link rel="stylesheet" type="text/css" href="popup.css">
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div class="popup-container">
+        <button id="popup-theme-toggle" class="theme-toggle-button-popup" title="Alternar tema">🌙</button>
+
+        <div id="timers-view">
+            <h2>Timers Ativos do Jira</h2>
+            <ul id="timers-list">
+            </ul>
+            <div id="no-timers-message" style="display:none; text-align: center; padding: 10px;">
+                Nenhum timer ativo no momento.
+            </div>
+            <button id="refresh-button" title="Atualizar lista de timers">Atualizar Lista</button>
+            <hr class="section-separator">
+            <button id="go-to-templates-button" class="action-button full-width-button neutral-bg">Gerenciar Templates de Duração</button>
+        </div>
+
+        <div id="templates-view" style="display: none;">
+            <h2>Gerenciar Templates de Duração</h2>
+            <div class="template-form">
+                <input type="text" id="template-name" placeholder="Nome do Template" class="template-input-name">
+                <div class="template-duration-inputs">
+                    <input type="number" id="template-hours" placeholder="H" min="0" max="23" value="0">h
+                    <input type="number" id="template-minutes" placeholder="M" min="0" max="59" value="0">m
+                    <input type="number" id="template-seconds" placeholder="S" min="0" max="59" value="0">s
+                </div>
+                <button id="save-template-button" class="action-button save-button">Salvar Template</button>
+            </div>
+            <ul id="templates-list-popup">
+                </ul>
+            <div id="no-templates-message-tpl-popup" style="display:none; text-align: center; padding: 10px;">
+                Nenhum template salvo.
+            </div>
+            <hr class="section-separator">
+            <button id="back-to-timers-button" class="action-button full-width-button neutral-bg">Voltar aos Timers</button>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
