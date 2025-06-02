@@ -120,12 +120,16 @@
 
 ## 🖼️ Screenshots
 
-*(Adicione aqui screenshots da extensão em uso. Por exemplo:*
 * *Painel do timer na página do Jira.*
-* *Popup mostrando a lista de timers ativos.*
+* ![Imagem do WhatsApp de 2025-06-02 à(s) 14 39 40_b6cf8c76](https://github.com/user-attachments/assets/241cbf39-8547-40f7-aef3-4244b601eab0) - Painel sem timers ativos
+* * *Popup mostrando a lista de timers ativos.*
+* ![Imagem do WhatsApp de 2025-06-02 à(s) 14 39 59_a7c187f8](https://github.com/user-attachments/assets/29e193b7-818d-482c-9742-8b64b7d9182b) - Painel com timer ativo
 * *Popup na visualização de gerenciamento de templates.*
+* ![Imagem do WhatsApp de 2025-06-02 à(s) 14 40 15_4f401a03](https://github.com/user-attachments/assets/b8462a9c-6078-45e6-a701-2a9ac3ef12ca)
 * *Exemplo de notificação do navegador.*
+* ![Imagem do WhatsApp de 2025-06-02 à(s) 14 41 38_b2fce3d1](https://github.com/user-attachments/assets/0c017bef-221b-479a-8f5d-1e75e0a4c83e)
 * *Dropdown de templates na página do Jira.)*
+![Imagem do WhatsApp de 2025-06-02 à(s) 14 42 36_bbde7055](https://github.com/user-attachments/assets/8a0ca435-6201-47d5-81d6-c2b03795c4fe)
 
 ## 📜 Licença
 
