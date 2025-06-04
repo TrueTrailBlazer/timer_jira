@@ -44,9 +44,8 @@
 
 ## 🚀 Instalação
 
-### Opção 1: Pela Chrome Web Store (Recomendado quando publicada)
-
-* (Link para a extensão na Chrome Web Store - adicione quando estiver publicada)
+### Opção 1: Pela Chrome Web Store 
+ Em andamento!!!!
 
 ### Opção 2: Manualmente (para desenvolvimento ou uso local)
 
