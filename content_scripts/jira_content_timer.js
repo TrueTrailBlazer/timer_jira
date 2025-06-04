@@ -1,15 +1,15 @@
 // content_scripts/jira_content_timer.js
-// Versão com logs de diagnóstico para reset de UI
+// Versão Refatorada: Corrige atualização do tempo excedido e melhora UI
 (function() {
     'use strict';
-    // console.log("JIRA TIMER EXT: Content script v1.31 (Logs de Reset) carregado!");
+    // console.log("JIRA TIMER EXT: Content script v1.32 (Refatorado) carregado!");
 
-    let onPageTimerInterval = null;
+    let onPageTimerInterval = null; // Único intervalo global para o timer da página
     const GLOBAL_THEME_STORAGE_KEY = 'jiraGlobalTimerTheme';
     const TEMPLATE_STORAGE_KEY_CS = 'jiraTimerTemplates';
     const CITY_FIELD_SELECTOR = 'div[data-testid="issue.views.field.single-line-text.read-view.customfield_11994"]';
 
-    // ... (funções getIssueKeyFromURL, getIssueTitle, getCityName, getDurationFromInputs, setDurationToInputs, formatSecondsToReadableString, formatTime, applyCurrentThemeToPagePanel - sem alterações)
+    // --- Funções Utilitárias (sem alterações significativas) ---
     function getIssueKeyFromURL() {
         let match = window.location.pathname.match(/\/issues\/([A-Z0-9]+-[0-9]+)/);
         if (match && match[1]) return match[1];
@@ -65,6 +65,7 @@
         let hours = parseInt(hoursInput?.value || '0', 10) || 0;
         let minutes = parseInt(minutesInput?.value || '0', 10) || 0;
         let seconds = parseInt(secondsInput?.value || '0', 10) || 0;
+        // Garante que os valores estejam dentro dos limites e atualiza os inputs
         hours = Math.max(0, Math.min(23, hours));
         minutes = Math.max(0, Math.min(59, minutes));
         seconds = Math.max(0, Math.min(59, seconds));
@@ -117,13 +118,12 @@
         }
     }
 
-
+    // --- Criação e Inserção do Painel ---
     function createTimerPanel(issueKey) {
         if (!issueKey) {
-            console.warn("JIRA TIMER EXT: createTimerPanel chamado sem issueKey. Painel não será criado.");
+            console.warn("JIRA TIMER EXT: createTimerPanel chamado sem issueKey.");
             return;
         }
-        // console.log(`CS: Criando painel do timer para ${issueKey}`);
         let panel = document.getElementById('jira-ext-timer-panel');
         if (panel) panel.remove();
 
@@ -132,19 +132,21 @@
         panel.className = 'jira-ext-timer-module';
         panel.innerHTML = `
             <div class="jira-ext-timer-input-group">
-                <input type="text" id="jira-ext-timer-hours" value="0" min="0" max="23" class="jira-ext-timer-input-field" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" id="jira-ext-timer-hours" value="0" min="0" max="23" class="jira-ext-timer-input-field" inputmode="numeric" pattern="[0-9]*" title="Horas">
                 <span class="jira-ext-timer-separator">h</span>
-                <input type="text" id="jira-ext-timer-minutes" value="30" min="0" max="59" class="jira-ext-timer-input-field" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" id="jira-ext-timer-minutes" value="30" min="0" max="59" class="jira-ext-timer-input-field" inputmode="numeric" pattern="[0-9]*" title="Minutos">
                 <span class="jira-ext-timer-separator">m</span>
-                <input type="text" id="jira-ext-timer-seconds" value="0" min="0" max="59" class="jira-ext-timer-input-field" inputmode="numeric" pattern="[0-9]*">
+                <input type="text" id="jira-ext-timer-seconds" value="0" min="0" max="59" class="jira-ext-timer-input-field" inputmode="numeric" pattern="[0-9]*" title="Segundos">
                 <span class="jira-ext-timer-separator">s</span>
             </div>
             <button id="jira-ext-timer-action-button" class="jira-ext-timer-action-button start">Iniciar</button>
             <div class="jira-ext-display-and-template-wrapper">
                  <div id="jira-ext-timer-display" class="jira-ext-timer-display-text">Timer parado</div>
+                 <select id="jira-ext-template-dropdown" class="jira-ext-template-dropdown-select" style="display: none;" title="Aplicar template de duração"><option value="">Aplicar template...</option></select>
             </div>
         `;
 
+        // Lógica de inserção (mantida da versão anterior, que usava a referência do usuário)
         const activityContainerSelector = 'div[data-testid="issue.activity.comment"]';
         let activityContainer = document.querySelector(activityContainerSelector);
         if (activityContainer) {
@@ -167,221 +169,145 @@
             if (!insertionPoint) document.body.insertBefore(panel, document.body.firstChild);
         }
 
+        // Aplica tema e carrega templates
+        loadAndApplyTheme();
+        loadAndPopulateTemplates(panel);
+
+        // Adiciona listener ao botão de ação
+        const actionButton = document.getElementById('jira-ext-timer-action-button');
+        if (actionButton) {
+            actionButton.addEventListener('click', handleActionButtonClick);
+        }
+
+        // Pede estado atual ao background para sincronizar a UI
+        requestTimerState(issueKey);
+    }
+
+    function loadAndApplyTheme() {
         chrome.storage.local.get(GLOBAL_THEME_STORAGE_KEY, (data) => {
             if (chrome.runtime.lastError) console.warn("CS: Erro ao ler tema global:", chrome.runtime.lastError.message);
             else applyCurrentThemeToPagePanel(data[GLOBAL_THEME_STORAGE_KEY] || 'light');
         });
+    }
+
+    function loadAndPopulateTemplates(panel) {
+        const dropdown = panel.querySelector('#jira-ext-template-dropdown');
+        if (!dropdown) return;
 
         chrome.storage.local.get(TEMPLATE_STORAGE_KEY_CS, (data) => {
             if (chrome.runtime.lastError) { console.warn("CS: Erro ao ler templates:", chrome.runtime.lastError.message); return; }
             const templates = data[TEMPLATE_STORAGE_KEY_CS] || {};
-            const displayAndTemplateWrapper = panel.querySelector('.jira-ext-display-and-template-wrapper');
-            if (Object.keys(templates).length > 0 && displayAndTemplateWrapper) {
-                const dropdown = document.createElement('select');
-                dropdown.id = 'jira-ext-template-dropdown';
-                dropdown.className = 'jira-ext-template-dropdown-select';
-                const defaultOption = document.createElement('option');
-                defaultOption.value = ''; defaultOption.textContent = 'Aplicar template...';
-                dropdown.appendChild(defaultOption);
-                Object.keys(templates).sort((a,b) => a.localeCompare(b)).forEach(name => {
+            const templateNames = Object.keys(templates);
+
+            if (templateNames.length > 0) {
+                dropdown.style.display = ''; // Mostra o dropdown
+                // Limpa opções antigas (exceto a primeira "Aplicar template...")
+                while (dropdown.options.length > 1) {
+                    dropdown.remove(1);
+                }
+                // Adiciona novas opções
+                templateNames.sort((a, b) => a.localeCompare(b)).forEach(name => {
                     const durationSeconds = templates[name];
                     const option = document.createElement('option');
                     option.value = durationSeconds;
                     option.textContent = `${name} (${formatSecondsToReadableString(durationSeconds)})`;
                     dropdown.appendChild(option);
                 });
-                dropdown.addEventListener('change', (event) => {
-                    const selectedDuration = parseInt(event.target.value, 10);
-                    if (!isNaN(selectedDuration) && selectedDuration > 0) {
-                        const hoursInput = document.getElementById('jira-ext-timer-hours');
-                        if (hoursInput && !hoursInput.disabled) setDurationToInputs(selectedDuration);
-                        else event.target.value = '';
-                    }
-                });
-                displayAndTemplateWrapper.appendChild(dropdown);
+                // Remove listener antigo e adiciona novo
+                dropdown.removeEventListener('change', handleTemplateSelection);
+                dropdown.addEventListener('change', handleTemplateSelection);
+            } else {
+                dropdown.style.display = 'none'; // Esconde se não houver templates
             }
         });
+    }
 
-        const actionButton = document.getElementById('jira-ext-timer-action-button');
-        const handleActionButtonClick = () => {
-            const currentIssueKeyForAction = getIssueKeyFromURL();
-            if (!currentIssueKeyForAction) {
-                console.error("CS: Ação de timer sem issueKey!");
-                alert("Erro: Não foi possível identificar o ticket.");
-                return;
+    function handleTemplateSelection(event) {
+        const selectedDuration = parseInt(event.target.value, 10);
+        if (!isNaN(selectedDuration) && selectedDuration > 0) {
+            const hoursInput = document.getElementById('jira-ext-timer-hours');
+            // Aplica apenas se os inputs não estiverem desabilitados (timer não rodando)
+            if (hoursInput && !hoursInput.disabled) {
+                setDurationToInputs(selectedDuration);
             }
-            const isCurrentlyRunning = actionButton.classList.contains('stop');
-            actionButton.disabled = true; // Disable button during processing
-
-            if (isCurrentlyRunning) {
-                chrome.runtime.sendMessage({ action: 'stopTimer', issueKey: currentIssueKeyForAction }, (response) => {
-                    actionButton.disabled = false; // Re-enable button
-                    if (chrome.runtime.lastError) {
-                        console.error(`CS: Erro ao enviar 'stopTimer' para ${currentIssueKeyForAction}:`, chrome.runtime.lastError.message);
-                        alert(`Erro ao parar o timer: ${chrome.runtime.lastError.message}. Tente recarregar a página ou a extensão.`);
-                        // Fetch current state to try to sync UI
-                        chrome.runtime.sendMessage({ action: 'getTimerState', issueKey: currentIssueKeyForAction }, (stateResp) => {
-                            if (!chrome.runtime.lastError && stateResp) updateTimerUI(stateResp.timerData, currentIssueKeyForAction);
-                        });
-                        return;
-                    }
-                    if (response && response.success) {
-                        updateTimerUI(response.timerData, currentIssueKeyForAction);
-                    } else {
-                        console.error(`CS: Falha ao parar timer para ${currentIssueKeyForAction}:`, response ? response.message : "Resposta inválida.");
-                        alert(`Falha ao parar o timer: ${response ? response.message : "Erro desconhecido"}`);
-                        // Fetch current state
-                         chrome.runtime.sendMessage({ action: 'getTimerState', issueKey: currentIssueKeyForAction }, (stateResp) => {
-                            if (!chrome.runtime.lastError && stateResp) updateTimerUI(stateResp.timerData, currentIssueKeyForAction);
-                        });
-                    }
-                });
-            } else { // Starting timer
-                const durationSeconds = getDurationFromInputs();
-                if (durationSeconds <= 0) {
-                    // ... (código do modal de erro existente)
-                    const modalError = document.getElementById('jiraExtErrorModal');
-                    if (modalError) modalError.remove();
-                    const modal = document.createElement('div');
-                    modal.id = 'jiraExtErrorModal';
-                    modal.innerHTML = `<div style="position:fixed; top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:2147483647;">
-                                         <div style="background:var(--timer-bg-color, white); color: var(--timer-text-color, black); padding:20px;border-radius:5px;box-shadow:0 2px 10px rgba(0,0,0,0.2);">
-                                           <p>Por favor, insira uma duração válida.<br>Configure pelo menos 1 segundo.</p>
-                                           <button id="jiraExtErrorOkButton" style="padding:5px 10px;float:right; background: var(--timer-button-start-bg); color: var(--timer-button-text); border: none; border-radius: 3px;">OK</button>
-                                         </div>
-                                       </div>`;
-                    document.body.appendChild(modal);
-                    document.getElementById('jiraExtErrorOkButton').onclick = () => modal.remove();
-                    actionButton.disabled = false; // Re-enable button
-                    return;
-                }
-                const title = getIssueTitle();
-                const cityName = getCityName();
-                chrome.runtime.sendMessage({
-                    action: 'startTimer', issueKey: currentIssueKeyForAction, issueTitle: title,
-                    cityName: cityName, durationSeconds: durationSeconds, pageUrl: window.location.href
-                }, (response) => {
-                    actionButton.disabled = false; // Re-enable button
-                    if (chrome.runtime.lastError) {
-                        console.error(`CS: Erro ao enviar 'startTimer' para ${currentIssueKeyForAction}:`, chrome.runtime.lastError.message);
-                        alert(`Erro ao iniciar o timer: ${chrome.runtime.lastError.message}. Tente recarregar.`);
-                        // UI might be inconsistent, try to reset or fetch state
-                        resetTimerUI(); // Revert optimistic UI if any, or set to default
-                        return;
-                    }
-                    if (response && response.success) {
-                        updateTimerUI(response.timerData, currentIssueKeyForAction);
-                    } else {
-                        console.error(`CS: Falha ao iniciar timer para ${currentIssueKeyForAction}:`, response ? response.message : "Resposta inválida.");
-                        alert(`Falha ao iniciar o timer: ${response ? response.message : "Erro desconhecido"}`);
-                        resetTimerUI(); // Revert UI
-                    }
-                });
-            }
-        };
-        if (actionButton) {
-            actionButton.removeEventListener('click', handleActionButtonClick);
-            actionButton.addEventListener('click', handleActionButtonClick);
         }
+        // Reseta o dropdown para a opção padrão após a seleção
+        event.target.value = '';
+    }
 
+    function requestTimerState(issueKey) {
         chrome.runtime.sendMessage({ action: 'getTimerState', issueKey: issueKey }, (response) => {
             if (chrome.runtime.lastError) {
-                console.warn(`CS: Erro ao buscar estado inicial do timer para ${issueKey}:`, chrome.runtime.lastError.message);
-                resetTimerUI(); return;
+                console.error(`CS: Erro ao pedir estado do timer para ${issueKey}:`, chrome.runtime.lastError.message);
+                // Tenta resetar a UI para um estado padrão seguro
+                resetTimerUI();
+                return;
             }
-            if (response && response.success) { // Checa 'success' da resposta do background
+            if (response && response.success) {
                 updateTimerUI(response.timerData, issueKey);
             } else {
-                // console.log(`CS: Nenhum dado de timer ativo para ${issueKey} no estado inicial ou falha ao buscar.`);
+                // Se não houver timer no background, reseta a UI
                 resetTimerUI();
             }
         });
     }
 
-    function updateTimerUI(timerData, issueKey) {
-        // ADICIONADO Log para quando timerData é null
-        if (timerData === null) {
-            console.log(`CS: updateTimerUI recebido timerData NULL para ${issueKey}. Chamando resetTimerUI.`);
-        } else if (timerData) {
-            // console.log(`CS: updateTimerUI para ${issueKey} com timerData:`, timerData);
-        }
-
-
-        const displayEl = document.getElementById('jira-ext-timer-display');
-        const actionButton = document.getElementById('jira-ext-timer-action-button');
-        const hoursInput = document.getElementById('jira-ext-timer-hours');
-        const minutesInput = document.getElementById('jira-ext-timer-minutes');
-        const secondsInput = document.getElementById('jira-ext-timer-seconds');
-        const templateDropdown = document.getElementById('jira-ext-template-dropdown');
-
-        if (!displayEl || !actionButton || !hoursInput || !minutesInput || !secondsInput) {
-            // console.warn("CS: Elementos da UI do timer não encontrados em updateTimerUI. O painel foi removido?");
+    // --- Lógica de Ação do Botão Principal ---
+    function handleActionButtonClick() {
+        const currentIssueKey = getIssueKeyFromURL();
+        if (!currentIssueKey) {
+            showErrorModal("Erro: Não foi possível identificar o ticket nesta página.");
             return;
         }
+        const actionButton = document.getElementById('jira-ext-timer-action-button');
+        const isCurrentlyRunning = actionButton.classList.contains('stop');
+        actionButton.disabled = true; // Desabilita durante a comunicação com o background
 
-        if (onPageTimerInterval) clearInterval(onPageTimerInterval);
-        onPageTimerInterval = null;
-
-        if (timerData && timerData.status === 'running' && timerData.endTime) {
-            actionButton.textContent = 'Parar';
-            actionButton.classList.remove('start'); actionButton.classList.add('stop');
-            hoursInput.disabled = true; minutesInput.disabled = true; secondsInput.disabled = true;
-            if (templateDropdown) templateDropdown.disabled = true;
-            setDurationToInputs(timerData.originalDurationSeconds || 0);
-            const updateRunningDisplay = () => {
-                const timeLeft = timerData.endTime - Date.now();
-                if (timeLeft > 0) {
-                    displayEl.innerHTML = `${formatTime(timeLeft)}`;
-                } else { // Timer just expired while this interval was running
-                    // console.log(`CS: Timer ${issueKey} expirou (detectado no intervalo do content script).`)
-                    clearInterval(onPageTimerInterval); onPageTimerInterval = null;
-                    // O background script deve enviar uma notificação 'timerExpiredNotificationDone'
-                    // que chamará updateTimerUI novamente com status 'expired'.
-                    // Para evitar UI piscando, podemos mostrar um estado intermediário ou apenas esperar.
-                    // Por simplicidade, vamos aguardar a mensagem do background.
-                    // Mas, se a mensagem demorar, a UI parecerá congelada.
-                    // Alternativa: atualizar para "Expirado!" imediatamente.
-                    displayEl.innerHTML = `<span class="timer-expired-notification">Expirado!</span>`;
-                     // E então buscar o estado mais recente para ter o tempo excedido.
-                    chrome.runtime.sendMessage({ action: 'getTimerState', issueKey: issueKey }, (response) => {
-                        if (!chrome.runtime.lastError && response && response.success) {
-                             updateTimerUI(response.timerData, issueKey);
-                        }
-                    });
+        if (isCurrentlyRunning) {
+            // Parar o Timer
+            chrome.runtime.sendMessage({ action: 'stopTimer', issueKey: currentIssueKey }, (response) => {
+                actionButton.disabled = false; // Reabilita após resposta
+                if (chrome.runtime.lastError || !response || !response.success) {
+                    console.error(`CS: Falha ao parar timer para ${currentIssueKey}:`, chrome.runtime.lastError?.message, response?.message);
+                    showErrorModal(`Erro ao parar o timer: ${response?.message || chrome.runtime.lastError?.message || 'Erro desconhecido'}. Tente recarregar.`);
+                    // Tenta resincronizar a UI buscando o estado atual
+                    requestTimerState(currentIssueKey);
+                } else {
+                    // A UI será atualizada pela mensagem 'updateTimerDisplay' do background
+                    // console.log(`CS: Comando stopTimer enviado para ${currentIssueKey}`);
                 }
-            };
-            updateRunningDisplay();
-            onPageTimerInterval = setInterval(updateRunningDisplay, 1000);
-        } else if (timerData && timerData.status === 'expired' && timerData.endTime) {
-            actionButton.textContent = 'Iniciar';
-            actionButton.classList.remove('stop'); actionButton.classList.add('start');
-            hoursInput.disabled = false; minutesInput.disabled = false; secondsInput.disabled = false;
-            if (templateDropdown) templateDropdown.disabled = false;
-            setDurationToInputs(timerData.originalDurationSeconds || 0);
-            const updateExpiredDisplay = () => {
-                const timeExceeded = Date.now() - timerData.endTime;
-                displayEl.innerHTML = `<span class="timer-expired-notification">Expirado!</span> <span class="timer-exceeded-info">${formatTime(timeExceeded)}</span>`;
-            };
-            updateExpiredDisplay();
-            // Não precisa de intervalo para tempo excedido se a mensagem do background já é o gatilho
-            // No entanto, para exibir o tempo excedido atualizando, um intervalo pode ser útil.
-            // Mas o onAlarm já faz isso ao chamar notifyContentScriptTimerExpired
-            // if (onPageTimerInterval) clearInterval(onPageTimerInterval); // Clear any previous one
-            // onPageTimerInterval = setInterval(updateExpiredDisplay, 1000); // Re-enable if live update of exceeded time is desired
-        } else { // Timer está 'stopped', é null (limpo), ou estado inicial
-            // console.log(`CS: updateTimerUI para ${issueKey} caindo no 'else' (parado/nulo/inicial). TimerData:`, timerData);
-            resetTimerUI(); // Lida com inputs, botão, e texto de display padrão.
-            if (timerData && timerData.status === 'stopped') { // Se explicitamente parado (e não nulo)
-                 // console.log(`CS: Timer ${issueKey} está 'stopped'. Configurando duração original.`);
-                 displayEl.textContent = 'Parado'; // Opcional, resetTimerUI já faz parecido
-                 setDurationToInputs(timerData.originalDurationSeconds || 0);
+            });
+        } else {
+            // Iniciar o Timer
+            const durationSeconds = getDurationFromInputs();
+            if (durationSeconds <= 0) {
+                showErrorModal("Duração inválida. Configure pelo menos 1 segundo.");
+                actionButton.disabled = false;
+                return;
             }
-            // Se timerData for null, resetTimerUI já definiu para o padrão (30 min, "Timer parado")
+            const title = getIssueTitle();
+            const cityName = getCityName();
+            chrome.runtime.sendMessage({
+                action: 'startTimer', issueKey: currentIssueKey, issueTitle: title,
+                cityName: cityName, durationSeconds: durationSeconds, pageUrl: window.location.href
+            }, (response) => {
+                actionButton.disabled = false; // Reabilita após resposta
+                if (chrome.runtime.lastError || !response || !response.success) {
+                    console.error(`CS: Falha ao iniciar timer para ${currentIssueKey}:`, chrome.runtime.lastError?.message, response?.message);
+                    showErrorModal(`Erro ao iniciar o timer: ${response?.message || chrome.runtime.lastError?.message || 'Erro desconhecido'}. Tente recarregar.`);
+                    // Tenta resetar a UI em caso de falha
+                    resetTimerUI();
+                } else {
+                    // A UI será atualizada pela mensagem 'updateTimerDisplay' do background
+                    // console.log(`CS: Comando startTimer enviado para ${currentIssueKey}`);
+                }
+            });
         }
     }
 
-    function resetTimerUI() {
-        console.log("CS: resetTimerUI chamado. Resetando painel para o estado padrão.");
+    // --- Atualização da UI do Timer ---
+    function updateTimerUI(timerData, issueKey) {
+        // console.log(`CS: Recebido updateTimerUI para ${issueKey}, dados:`, timerData);
         const displayEl = document.getElementById('jira-ext-timer-display');
         const actionButton = document.getElementById('jira-ext-timer-action-button');
         const hoursInput = document.getElementById('jira-ext-timer-hours');
@@ -389,105 +315,223 @@
         const secondsInput = document.getElementById('jira-ext-timer-seconds');
         const templateDropdown = document.getElementById('jira-ext-template-dropdown');
 
-        if (displayEl) displayEl.textContent = 'Timer parado';
+        // Limpa o intervalo anterior antes de definir um novo estado
+        if (onPageTimerInterval) {
+            clearInterval(onPageTimerInterval);
+            onPageTimerInterval = null;
+        }
+
+        if (!displayEl || !actionButton || !hoursInput || !minutesInput || !secondsInput || !templateDropdown) {
+            // console.warn("CS: Elementos da UI não encontrados durante updateTimerUI. O painel pode ter sido removido.");
+            return; // Aborta se elementos essenciais não existem
+        }
+
+        // Estado padrão: Timer parado/não existente
+        let buttonText = 'Iniciar';
+        let buttonClass = 'start';
+        let displayHTML = 'Timer parado';
+        let inputsDisabled = false;
+
+        if (timerData) {
+            // Define o estado baseado nos dados recebidos
+            if (timerData.status === 'running' && timerData.endTime) {
+                buttonText = 'Parar';
+                buttonClass = 'stop';
+                inputsDisabled = true;
+                setDurationToInputs(timerData.originalDurationSeconds || 0); // Mostra duração original nos inputs
+
+                const updateRunning = () => {
+                    const timeLeft = timerData.endTime - Date.now();
+                    if (timeLeft > 0) {
+                        displayEl.innerHTML = `Tempo restante: ${formatTime(timeLeft)}`;
+                    } else {
+                        // O tempo acabou, mas o estado ainda é 'running' (esperando background atualizar)
+                        // Mostra expirado e para o intervalo local.
+                        displayEl.innerHTML = `<span class="timer-expired-notification">TEMPO ESGOTADO!</span>`;
+                        if (onPageTimerInterval) clearInterval(onPageTimerInterval);
+                        onPageTimerInterval = null;
+                        // O background logo enviará o estado 'expired' oficial.
+                    }
+                };
+                updateRunning();
+                onPageTimerInterval = setInterval(updateRunning, 1000);
+
+            } else if (timerData.status === 'expired' && timerData.endTime) {
+                buttonText = 'Iniciar'; // Botão volta a ser 'Iniciar' quando expira
+                buttonClass = 'start';
+                inputsDisabled = false; // Permite iniciar um novo timer
+                setDurationToInputs(timerData.originalDurationSeconds || 0); // Mantém a duração original nos inputs
+
+                // **CORREÇÃO:** Inicia um intervalo para atualizar o tempo excedido
+                const updateExpired = () => {
+                    const timeExceeded = Date.now() - timerData.endTime;
+                    displayEl.innerHTML = `<span class="timer-expired-notification">TEMPO ESGOTADO!</span>
+                                         <span class="timer-exceeded-info">Excedido há: ${formatTime(timeExceeded)}</span>`;
+                };
+                updateExpired(); // Executa imediatamente
+                onPageTimerInterval = setInterval(updateExpired, 1000); // Atualiza a cada segundo
+
+            } else if (timerData.status === 'stopped') {
+                buttonText = 'Iniciar';
+                buttonClass = 'start';
+                displayHTML = 'Timer parado.';
+                inputsDisabled = false;
+                setDurationToInputs(timerData.originalDurationSeconds || 0); // Mostra duração original
+            }
+        } else {
+             // Se timerData é null (timer limpo), reseta para o estado inicial
+             resetTimerUI();
+             return; // Sai da função pois resetTimerUI já fez o necessário
+        }
+
+        // Aplica o estado à UI
+        actionButton.textContent = buttonText;
+        actionButton.className = `jira-ext-timer-action-button ${buttonClass}`;
+        actionButton.disabled = false; // Garante que o botão esteja habilitado após a atualização
+        displayEl.innerHTML = displayHTML; // Define o HTML inicial (será sobrescrito pelos intervalos se running/expired)
+        hoursInput.disabled = inputsDisabled;
+        minutesInput.disabled = inputsDisabled;
+        secondsInput.disabled = inputsDisabled;
+        templateDropdown.disabled = inputsDisabled;
+        if (!inputsDisabled) {
+             templateDropdown.value = ''; // Reseta seleção do dropdown se habilitado
+        }
+    }
+
+    // Reseta a UI para o estado inicial (timer não existe ou foi limpo)
+    function resetTimerUI() {
+        // console.log("CS: Chamando resetTimerUI");
+        const displayEl = document.getElementById('jira-ext-timer-display');
+        const actionButton = document.getElementById('jira-ext-timer-action-button');
+        const hoursInput = document.getElementById('jira-ext-timer-hours');
+        const minutesInput = document.getElementById('jira-ext-timer-minutes');
+        const secondsInput = document.getElementById('jira-ext-timer-seconds');
+        const templateDropdown = document.getElementById('jira-ext-template-dropdown');
+
+        if (onPageTimerInterval) {
+            clearInterval(onPageTimerInterval);
+            onPageTimerInterval = null;
+        }
+
+        if (displayEl) displayEl.innerHTML = 'Timer parado';
         if (actionButton) {
             actionButton.textContent = 'Iniciar';
-            actionButton.classList.remove('stop'); actionButton.classList.add('start');
-            actionButton.disabled = false; // Garantir que o botão esteja habilitado
+            actionButton.className = 'jira-ext-timer-action-button start';
+            actionButton.disabled = false;
         }
         if (hoursInput) hoursInput.disabled = false;
         if (minutesInput) minutesInput.disabled = false;
         if (secondsInput) secondsInput.disabled = false;
         if (templateDropdown) {
-            templateDropdown.disabled = false;
-            templateDropdown.value = '';
+             templateDropdown.disabled = false;
+             templateDropdown.value = '';
         }
 
-        if (onPageTimerInterval) {
-            // console.log("CS: Limpando onPageTimerInterval em resetTimerUI.");
-            clearInterval(onPageTimerInterval);
-            onPageTimerInterval = null;
+        // Define um valor padrão para os inputs se estiverem vazios (ex: 30m)
+        if (hoursInput && minutesInput && secondsInput &&
+            hoursInput.value === '0' && minutesInput.value === '0' && secondsInput.value === '0') {
+            setDurationToInputs(30 * 60); // Padrão de 30 minutos
         }
-        setDurationToInputs(1800); // Default to 30 minutes
-        // console.log("CS: resetTimerUI finalizado. Inputs devem ser 30:00, texto 'Timer parado'.");
     }
 
+    // --- Tratamento de Erros (Modal Simples) ---
+    function showErrorModal(message) {
+        let modal = document.getElementById('jiraExtErrorModal');
+        if (modal) modal.remove(); // Remove modal anterior se existir
+
+        modal = document.createElement('div');
+        modal.id = 'jiraExtErrorModal';
+        // Estilos inline para simplicidade e evitar conflitos
+        modal.innerHTML = `
+            <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:2147483647; font-family: sans-serif;">
+                <div style="background: var(--timer-bg-color, #fff); color: var(--timer-text-color, #000); padding: 25px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-width: 300px; text-align: center;">
+                    <p style="margin: 0 0 15px 0; font-size: 14px; line-height: 1.4;">${message}</p>
+                    <button id="jiraExtErrorOkButton" style="padding: 8px 15px; background: var(--timer-button-start-bg, #0052CC); color: var(--timer-button-text, #fff); border: none; border-radius: 3px; cursor: pointer; font-size: 14px;">OK</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+        // Adiciona listener ao botão OK para fechar o modal
+        document.getElementById('jiraExtErrorOkButton').addEventListener('click', () => modal.remove(), { once: true });
+    }
+
+    // --- Listener para Mensagens do Background ---
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (chrome.runtime.lastError) {
-            console.warn("CS: Erro ao receber mensagem:", chrome.runtime.lastError.message);
-            return true; // Mantém canal aberto para outras extensões, se necessário
-        }
         const currentKey = getIssueKeyFromURL();
-        // console.log(`CS: Mensagem recebida: action=${request.action}, issueKey=${request.issueKey}, currentKey=${currentKey}`);
+        // Ignora mensagens que não são para o ticket atual
+        if (!currentKey || request.issueKey !== currentKey) {
+            // console.log(`CS: Mensagem ignorada (${request.action}) - Key mismatch. Atual: ${currentKey}, Mensagem: ${request.issueKey}`);
+            return true; // Indica que não vai enviar resposta síncrona
+        }
 
         if (request.action === 'updateTimerDisplay' || request.action === 'timerExpiredNotificationDone') {
-            if (!currentKey || request.issueKey !== currentKey) {
-                // console.log(`CS: Mensagem ignorada (issueKey não corresponde ou currentKey nulo). Mensagem para ${request.issueKey}, página atual ${currentKey}`);
-                // Não envie resposta se a mensagem não for para esta página, para não fechar o canal para a página correta.
-                return false; // Indica que não vamos enviar uma resposta assíncrona.
-            }
-            // console.log(`CS: Processando ${request.action} para ${request.issueKey}. Dados:`, request.timerData);
+            // console.log(`CS: Recebido ${request.action} para ${request.issueKey}`);
             updateTimerUI(request.timerData, request.issueKey);
-            sendResponse({status: `CS UI updated for ${request.action} on ${request.issueKey}`});
+            sendResponse({ status: `CS UI updated for ${request.action}` });
+        } else {
+            // Ação desconhecida ou não relevante para o content script
+            sendResponse({ status: `CS ignored action ${request.action}` });
         }
-        return true; // Retornar true para sendResponse assíncrona se outras ações forem adicionadas
+        return true; // Indica que a resposta pode ser assíncrona (embora aqui seja síncrona)
     });
 
+    // --- Listener para Mudanças no Storage (Tema e Templates) ---
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'local') {
             if (changes[GLOBAL_THEME_STORAGE_KEY]) {
                 applyCurrentThemeToPagePanel(changes[GLOBAL_THEME_STORAGE_KEY].newValue || 'light');
             }
             if (changes[TEMPLATE_STORAGE_KEY_CS]) {
-                const currentPanelIssueKey = getIssueKeyFromURL();
-                if (currentPanelIssueKey && document.getElementById('jira-ext-timer-panel')) {
-                    // console.log("CS: Templates alterados, recriando painel para atualizar dropdown.");
-                    createTimerPanel(currentPanelIssueKey);
-                }
+                const panel = document.getElementById('jira-ext-timer-panel');
+                if (panel) loadAndPopulateTemplates(panel);
             }
         }
     });
 
-    const currentIssueKey = getIssueKeyFromURL();
-    if (currentIssueKey) {
-        const initPanel = () => {
-            // Verifica se o painel já existe para evitar duplicatas
-            // Esta verificação é crucial, especialmente com o MutationObserver
-            if (!document.getElementById('jira-ext-timer-panel')) {
-                // console.log(`CS: initPanel - painel não existe para ${currentIssueKey}, criando...`);
-                createTimerPanel(currentIssueKey);
-            } else {
-                // console.log(`CS: initPanel - painel já existe para ${currentIssueKey}, não recriando.`);
-                // Opcional: Se o painel existe, talvez forçar uma atualização de estado?
-                // chrome.runtime.sendMessage({ action: 'getTimerState', issueKey: currentIssueKey }, (response) => {
-                //     if (!chrome.runtime.lastError && response && response.success) {
-                //         updateTimerUI(response.timerData, currentIssueKey);
-                //     }
-                // });
-            }
-        };
-        const observer = new MutationObserver((mutationsList, obs) => {
-            // Observador mais seletivo para evitar recriações desnecessárias
-            // Tenta encontrar um elemento chave que indica que a UI principal do Jira carregou/mudou
-            // e que nosso painel *não* está presente.
-            const jiraContentAnchor = document.querySelector(activityContainerSelector) || document.querySelector('h1[data-testid="issue.views.issue-base.foundation.summary.heading"]');
-            if (jiraContentAnchor && !document.getElementById('jira-ext-timer-panel')) {
-                // console.log("CS: MutationObserver detectou mudança e ausência do painel. Tentando (re)criar painel.");
-                // Usar um debounce ou delay menor pode ser considerado se 750ms for muito.
-                // Um clearTimeout em um timer de initPanel anterior pode ser útil para evitar múltiplas chamadas.
-                setTimeout(initPanel, 750); // Delay para estabilização da DOM
-            }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            // console.log("CS: Documento pronto, agendando initPanel.");
-            setTimeout(initPanel, 1000); // Aumentado um pouco o delay inicial
+    // --- Inicialização e Observador de Mudanças na DOM ---
+    function initializeTimerPanel() {
+        const currentIssueKey = getIssueKeyFromURL();
+        if (currentIssueKey) {
+            // Tenta criar o painel. Se já existir, será removido e recriado.
+            createTimerPanel(currentIssueKey);
         } else {
-            window.addEventListener('load', () => {
-                // console.log("CS: Evento 'load' disparado, agendando initPanel.");
-                setTimeout(initPanel, 1200); // Aumentado um pouco o delay pós-load
-            }, { once: true });
+            // Se não estamos em uma página de issue, remove qualquer painel antigo
+            const oldPanel = document.getElementById('jira-ext-timer-panel');
+            if (oldPanel) oldPanel.remove();
         }
     }
+
+    // Observador para lidar com navegação SPA no Jira
+    let lastUrl = location.href;
+    const observer = new MutationObserver((mutations) => {
+        // Verifica se a URL mudou (indicativo de navegação SPA)
+        if (location.href !== lastUrl) {
+            lastUrl = location.href;
+            // console.log(`CS: URL mudou para ${lastUrl}, reinicializando painel...`);
+            // Dá um pequeno tempo para a nova página renderizar antes de tentar inserir
+            setTimeout(initializeTimerPanel, 500);
+        } else {
+            // Se a URL não mudou, verifica se o painel existe e se o container principal ainda está lá
+            // Isso ajuda a recriar o painel se ele for removido por alguma atualização da UI do Jira
+            const panelExists = !!document.getElementById('jira-ext-timer-panel');
+            const mainContainerExists = !!document.querySelector('div[data-testid="issue.activity.comment"]') || !!document.querySelector('div[data-testid="issue.views.issue-base.foundation.primary-column"]');
+
+            if (mainContainerExists && !panelExists && getIssueKeyFromURL()) {
+                 // console.log("CS: Container existe, mas painel sumiu. Tentando recriar...");
+                 setTimeout(initializeTimerPanel, 300); // Tenta recriar com um delay menor
+            }
+        }
+    });
+
+    // Inicia observando mudanças na árvore DOM
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Tentativa inicial de criação do painel ao carregar o script
+    // Usa um timeout maior para dar chance à página do Jira carregar completamente
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(initializeTimerPanel, 1500);
+    } else {
+        window.addEventListener('load', () => setTimeout(initializeTimerPanel, 1800), { once: true });
+    }
+
 })();
+
