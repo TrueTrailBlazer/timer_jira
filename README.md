@@ -146,9 +146,7 @@ Aqui estão algumas telas da extensão em ação:
 *Dropdown de templates na página do Jira.*
 ## 📜 Licença
 
-Este projeto é distribuído sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes (se você adicionar um).
-*(Ou substitua MIT pela licença de sua escolha)*
-
+Este projeto é distribuído sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 ---
 
 Sinta-se à vontade para ajustar a versão, o nome do repositório no comando `git clone`, a licença e adicionar seus próprios screenshots!
