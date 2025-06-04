@@ -51,7 +51,7 @@
 
 1.  Clone este repositório ou baixe o código-fonte como ZIP e extraia-o.
     ```bash
-    git clone [https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git](https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git)
+    git clone 
     ```
 2.  Abra o Google Chrome e navegue até `chrome://extensions`.
 3.  Habilite o "Modo do desenvolvedor" no canto superior direito.
